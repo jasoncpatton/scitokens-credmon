@@ -76,7 +76,11 @@ access tokens from.
   * Consult the OAuth provider API documentation to obtain the
   authorization endpoint URL and the token endpoint URL.
 5. Configure the Flask application using WSGI in your web server
-config.
+configuration. The application should run as a WSGI daemon process
+as user condor and group condor. An example WSGI application script
+is provided in `examples/oauth_credmon.wsgi`. Be sure to modify the
+`app.secret_key` so that user sessions are both secure and persist
+if the web service restarts.
 6. On the HTCondor execute hosts, add the following to the configuration file:
     ```
     CREDD_OAUTH_MODE = TRUE
