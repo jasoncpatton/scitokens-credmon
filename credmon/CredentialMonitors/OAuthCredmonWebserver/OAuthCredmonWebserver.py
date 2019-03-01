@@ -150,27 +150,29 @@ def key(key):
         raise Exception("Key file {0} doesn't exist".format(key_path))
     
     # read in the key file, which is a list of classads
-    session['providers'] = {}
-    session['logged_in'] = False
+    session_dict = {}
+    session_dict['providers'] = {}
+    session_dict['logged_in'] = False
     print('Creating new session from {0}'.format(key_path))
     with open(key_path, 'r') as key_file:
         
         # store the path to the key file since it will be accessed later in the session
-        session['key_path'] = key_path
+        session_dict['key_path'] = key_path
         
         # initialize data for each token provider
         for provider_ad in classad.parseAds(key_file):
             provider = get_provider_str(provider_ad['Provider'], provider_ad.get('Handle', ''))
-            session['providers'][provider] = {}
-            session['providers'][provider]['logged_in'] = False
+            session_dict['providers'][provider] = {}
+            session_dict['providers'][provider]['logged_in'] = False
             if 'Scopes' in provider_ad:
-                session['providers'][provider]['requested_scopes'] = [s.rstrip().lstrip() for s in provider_ad['Scopes'].split(',')]
+                session_dict['providers'][provider]['requested_scopes'] = [s.rstrip().lstrip() for s in provider_ad['Scopes'].split(',')]
             if 'Audience' in provider_ad:
-                session['providers'][provider]['requested_resource'] = provider_ad['Audience']
+                session_dict['providers'][provider]['requested_resource'] = provider_ad['Audience']
 
         # the local username is global to the session, just grab it from the last classad
-        session['local_username'] = provider_ad['LocalUser']
-        
+        session_dict['local_username'] = provider_ad['LocalUser']
+
+    session = session_dict
     print('New session started for user {0}'.format(session['local_username']))
     return render_template('index.html')
 
@@ -180,8 +182,12 @@ def oauth_login(provider):
     Go to OAuth provider
     """
 
-    if not (provider in session['providers']):
-        raise Exception("Provider {0} not in list of providers".format(provider))
+    try:
+        if not (provider in session['providers']):
+            raise Exception("Provider {0} not in list of providers".format(provider))
+    except KeyError:
+        sys.stderr.write("Problem with session dict: {0}\n".format(session))
+        raise
     provider_ad = get_provider_ad(provider, session['key_path'])
 
     # gather information from the key file classad
