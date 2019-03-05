@@ -256,13 +256,23 @@ def generate_secret_key():
 
     keyfile = os.path.join(htcondor.param.get("SEC_CREDENTIAL_DIRECTORY", "/var/lib/condor/credentials"), "wsgi_session_key")
 
+    # Create the secret key file, if possible, with read-only permissions, if it doesn't exist
     try:
-        fd = os.open(keyfile, os.O_CREAT | os.O_RDWR, 0o600)
-        current_key = os.read(fd, 24)
+        os.close(os.open(keyfile, os.O_CREAT | os.O_EXCL | os.O_RDWR, stat.S_IRUSR))
     except Exception:
-        logger.warning("Unable to access WSGI session key; will use a non-persistent key")
+        # An exception will be thrown if it exists, and that's fine, we'll check that we can read it at the next step.
+        pass
+
+    # Try to open the secret key file.
+    # It absolutely should exist at this point, otherwise the parent directory must not exist or we must not have write access.
+    try:
+        with open(keyfile, 'rb') as f:
+            current_key = f.read(24)
+    except Exception:
+        logger.warning("Unable to access WSGI session key at %s; will use a non-persistent key.", keyfile)
         return os.urandom(16)
 
+    # Make sure the key string isn't empty or truncated.
     if len(current_key) >= 16:
         logger.debug("Using the persistent WSGI session key")
         return current_key
@@ -270,12 +280,15 @@ def generate_secret_key():
     # We are responsible for generating the keyfile for this webapp to use.
     new_key = os.urandom(24)
     try:
-        atomic_output(new_key, keyfile)
-        logger.info("Successfully creeated a new persistent WSGI session key for scitokens-credmon application %s")
-    except:
-        logger.exception("Failed to atomically create a new persistent WSGI session key; will use a transient one.")
-        os.unlink(keyfile)
+        # Use atomic output so the file is only ever read-only
+        atomic_output(new_key, keyfile, stat.S_IRUSR)
+        logger.info("Successfully created a new persistent WSGI session key for scitokens-credmon application at %s.", keyfile)
+    except Exception:
+        logger.exception("Failed to atomically create a new persistent WSGI session key at %s; will use a transient one.", keyfile)
+        # Attempt to remove the keyfile
+        try:
+            os.unlink(keyfile)
+        except Exception:
+            pass
         return new_key
-    finally:
-        os.close(fd)
     return new_key
