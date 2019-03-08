@@ -6,6 +6,7 @@ import pwd
 import stat
 import sys
 import tempfile
+import errno
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -259,17 +260,18 @@ def generate_secret_key():
     # Create the secret key file, if possible, with read-only permissions, if it doesn't exist
     try:
         os.close(os.open(keyfile, os.O_CREAT | os.O_EXCL | os.O_RDWR, stat.S_IRUSR))
-    except Exception:
-        # An exception will be thrown if it exists, and that's fine, we'll check that we can read it at the next step.
-        pass
+    except OSError as os_error:
+        # An exception will be thrown if the file already exists, and that's fine and good.
+        if not (os_error.errno == errno.EEXIST):
+            logger.warning("Unable to access WSGI session key at %s (%s);  will use a non-persistent key.", keyfile, str(os_error))
+            return os.urandom(16)
 
-    # Try to open the secret key file.
-    # It absolutely should exist at this point, otherwise the parent directory must not exist or we must not have write access.
+    # Open the secret key file.
     try:
         with open(keyfile, 'rb') as f:
             current_key = f.read(24)
-    except Exception:
-        logger.warning("Unable to access WSGI session key at %s; will use a non-persistent key.", keyfile)
+    except Exception as e:
+        logger.warning("Unable to access WSGI session key at %s (%s); will use a non-persistent key.", keyfile, str(e))
         return os.urandom(16)
 
     # Make sure the key string isn't empty or truncated.
