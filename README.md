@@ -22,17 +22,15 @@ To install the latest version of the Scitokens CredMon:
 pip install git+https://github.com/htcondor/scitokens-credmon
 ```
 
-The installation writes (or overwrites) a number of configuration
-files that set the stage for enabling the CredMon, including the
-OAuth2 tokens Flask app. You may want to back up these files before
-installing or upgrading if you have made changes to them. You may also
-want to inspect them following an install to understand any changes
-these files make to your system's services:
-
+If installing from `pip`, you may want to [grab and edit configuration
+files](configs/) that set the stage for enabling the CredMon and place
+them at the following recommended locations:
 ```
-/etc/condor/config.d/50-scitokens-credmon.conf  HTCondor configuration file
-/etc/httpd/conf.d/scitokens_credmon.conf        Apache configuration file for the Flask app
+/etc/condor/config.d/50-scitokens-credmon.conf                  HTCondor configuration file
+/etc/httpd/conf.d/scitokens_credmon.conf                        Apache configuration file for the Flask app
+/var/www/wsgi-scripts/scitokens-credmon/scitokens-credmon.wsgi  WSGI script for the Flask app
 ```
+These configuration files are referenced below in *Deployment*.
 
 ## Deployment
 
@@ -52,40 +50,56 @@ by the group condor, not readable by others, with the SetGID bit set:
 2. On HTCondor submit hosts, uncomment the `DAEMON_LIST` line in
 `/etc/condor/config.d/50-scitokens-credmon.conf` so that it reads:
     ```
-	DAEMON_LIST = $(DAEMON_LIST), CREDD, SEC_CREDENTIAL_MONITOR
+    DAEMON_LIST = $(DAEMON_LIST), CREDD, SEC_CREDENTIAL_MONITOR
     ```
-	This tells HTCondor to start the CredD and CredMon when HTCondor
-	starts.
+    This tells HTCondor to start the CredD and CredMon when HTCondor
+    starts.
 
 3. On HTCondor execute hosts, you may choose to install the HTCondor
 Scitokens CredMon Python package and follow the same steps above, or
 you may manually add the following to the HTCondor configuration:
-	```
-	DAEMON_LIST = $(DAEMON_LIST), CREDD
-    CREDD_OAUTH_MODE = TRUE
-	SEC_CREDENTIAL_DIRECTORY = /var/lib/condor/credentials
     ```
-	The `SEC_CREDENTIAL_DIRECTORY` must exist and be owned by root.
+    DAEMON_LIST = $(DAEMON_LIST), CREDD
+    SEC_CREDENTIAL_DIRECTORY = /var/lib/condor/credentials
+    ```
+    The `SEC_CREDENTIAL_DIRECTORY` must exist and be owned by root.
 
-OAuth CredMon Mode
-------------------
-`/etc/httpd/conf.d/scitokens_credmon.conf` adds the OAuth2 tokens
+4. For *both submit and execute hosts*, HTCondor must be configured to
+use encryption for daemon-to-daemon communication. You can check this
+by running `condor_config_val SEC_DEFAULT_ENCRYPTION`, which will
+return `REQUIRED` if encryption is enabled. If encryption is not
+enabled, you should uncomment from `50-scitokens-credmon.conf` or add
+the following to your HTCondor configuration:
+    ```
+    SEC_DEFAULT_ENCRYPTION = REQUIRED
+    ```
+
+### OAuth2 CredMon Mode
+1. `/etc/httpd/conf.d/scitokens_credmon.conf` adds the OAuth2 tokens
 Flask app at the root of your Apache webserver. With this
 configuration, the app will run as long as Apache is running.
 
-OAuth2 client information should be added to the submit host HTCondor
+2. On HTCondor submit hosts, uncomment the `CREDD_OAUTH_MODE` line in
+`/etc/condor/config.d/50-scitokens-credmon.conf` so that it reads:
+    ```
+    CREDD_OAUTH_MODE = True
+    ```
+    This tells the CredD to use the OAuth2 mode of transferring tokens
+    to the execute hosts.
+
+3. OAuth2 client information should be added to the submit host HTCondor
 configuration for any OAuth2 providers that you would like your users
 to be able to obtain access tokens from. For each provider:
-  * The client id and client secret are generated when you
-  register your submit machine as an application with the
-  OAuth2 provider's API. The client secret must be kept in a file
-  that is only readable by root.
-  * You should configure the return URL in your application's settings
-  as `https://<submit_hostname>/return/<provider>`.
-  * Consult the OAuth2 provider's API documentation to obtain the
-  authorization, token, and user URLs.
+    * The client id and client secret are generated when you
+    register your submit machine as an application with the
+    OAuth2 provider's API. The client secret must be kept in a file
+    that is only readable by root.
+    * You should configure the return URL in your application's settings
+    as `https://<submit_hostname>/return/<provider>`.
+    * Consult the OAuth2 provider's API documentation to obtain the
+    authorization, token, and user URLs.
 
-The HTCondor configuration parameters are:
+The HTCondor OAuth2 token configuration parameters are:
 ```
 <PROVIDER>_CLIENT_ID           The client id string
 <PROVIDER>_CLIENT_SECRET_FILE  Path to the file with the client secret string
@@ -104,7 +118,7 @@ BOX_TOKEN_URL = https://api.box.com/oauth2/token
 BOX_USER_URL = https://api.box.com/2.0/users/me
 ```
 Multiple OAuth2 clients can be configured as long as unique names are
-used for `<PROVIDER>`.
+used for each `<PROVIDER>`.
 
 Users that request tokens will be directed to a URL on the submit host
 containing a unique key. The Flask app will use this key to generate
@@ -114,9 +128,7 @@ provider. Tokens returned from the providers will be stored in the
 tokens will be monitored and refreshed as necessary by the OAuth
 CredMon.
 
-Local Credmon Mode
-------------------
-
+### Local Credmon Mode
 In the "local mode", the credmon will use a provided private key to sign a SciToken
 directly, bypassing any OAuth callout.  This is useful in the case where the admin
 wants a less-complex setup than a full OAuth deployment.
