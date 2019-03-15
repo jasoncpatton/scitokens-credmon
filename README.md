@@ -34,8 +34,9 @@ These configuration files are referenced below in *Deployment*.
 
 ## Deployment
 
-After installing the Scitokens CredMon, some configuration is required
-to enable the CredMon and, if desired, the OAuth2 Token Flask app.
+After installing the Scitokens CredMon for the first time, some
+configuration is required to enable the CredMon and, if desired, the
+OAuth2 Token Flask app.
 
 1. Create or modify HTCondor's credential directory
 (`condor_config_val SEC_CREDENTIAL_DIRECTORY`) such that it is owned
