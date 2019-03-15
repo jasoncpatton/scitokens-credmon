@@ -285,12 +285,7 @@ def generate_secret_key():
         # Use atomic output so the file is only ever read-only
         atomic_output(new_key, keyfile, stat.S_IRUSR)
         logger.info("Successfully created a new persistent WSGI session key for scitokens-credmon application at %s.", keyfile)
-    except Exception:
-        logger.exception("Failed to atomically create a new persistent WSGI session key at %s; will use a transient one.", keyfile)
-        # Attempt to remove the keyfile
-        try:
-            os.unlink(keyfile)
-        except Exception:
-            pass
+    except Exception as e:
+        logger.exception("Failed to atomically create a new persistent WSGI session key at %s (%s); will use a transient one.", keyfile, str(e))
         return new_key
     return new_key
