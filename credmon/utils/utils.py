@@ -270,7 +270,7 @@ def generate_secret_key():
     try:
         with open(keyfile, 'rb') as f:
             current_key = f.read(24)
-    except Exception as e:
+    except IOError as e:
         logger.warning("Unable to access WSGI session key at %s (%s); will use a non-persistent key.", keyfile, str(e))
         return os.urandom(16)
 
