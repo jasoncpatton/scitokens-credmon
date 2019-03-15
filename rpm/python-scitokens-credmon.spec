@@ -21,7 +21,7 @@ A HTCondor credentials monitor specific for OAuth2 and SciTokens workflows.
 Summary:        Scitokens credential monitor for use with HTCondor
 %{?python_provide:%python_provide python2-%{pypi_name}}
  
-Requires:       condor-python
+Requires:       python2-condor
 Requires:       python-requests-oauthlib
 Requires:       python-six
 Requires:       python-flask
