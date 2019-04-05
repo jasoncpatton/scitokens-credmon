@@ -11,7 +11,7 @@ URL:            https://github.com/htcondor/scitokens-credmon
 Source0:        https://test-files.pythonhosted.org/packages/09/17/ac47313b45b62691fa50a19311a60e3f16f9e6a20c7bdf7e41fe904cc2b2/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
  
-BuildRequires:  python2-devel
+BuildRequires:  python-devel
 BuildRequires:  python-setuptools
 
 %description
@@ -21,12 +21,12 @@ A HTCondor credentials monitor specific for OAuth2 and SciTokens workflows.
 Summary:        Scitokens credential monitor for use with HTCondor
 %{?python_provide:%python_provide python2-%{pypi_name}}
  
-Requires:       python2-condor
+Requires:       python-condor
 Requires:       python-requests-oauthlib
 Requires:       python-six
 Requires:       python-flask
-Requires:       python2-cryptography
-Requires:       python2-scitokens
+Requires:       python-cryptography
+Requires:       python-scitokens
 Requires:       httpd
 Requires:       mod_wsgi
 
