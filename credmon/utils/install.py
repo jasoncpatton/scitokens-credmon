@@ -2,6 +2,7 @@ import os
 import sys
 import socket
 import shutil
+import errno
 import htcondor
 
 credmon_config_template = '''
@@ -129,11 +130,17 @@ application = app
 
 def install_to_condor(
         condor_credmon_config_path = os.path.join(htcondor.param['LOCAL_CONFIG_DIR'], '50-scitokens-credmon.conf'),
-        condor_tokens_config_path = os.path.join(htcondor.param['LOCAL_CONFIG_DIR'], '60-token-providers.conf'),
+        condor_tokens_config_path = os.path.join(htcondor.param['LOCAL_CONFIG_DIR'], '60-oauth-token-providers.conf'),
         credential_directory = os.path.join('/', 'var', 'lib', 'condor', 'credentials'),
         credmon_web_port = 443,
         credmon_web_directory = '/',
         ):
+
+    if not os.path.exists(os.path.dirname(condor_credmon_config_path)):
+        raise OSError(errno.ENOENT, 'Cannot find HTCondor config directory', os.path.dirname(condor_credmon_config_path))
+
+    if not os.path.exists(os.path.dirname(condor_tokens_config_path)):
+        raise OSError(errno.ENOENT, 'Cannot find HTCondor config directory', os.path.dirname(condor_tokens_config_path))
 
     if not os.path.exists(credential_directory):
         sys.stderr.write('Warning: credential directory {0} does not exist\n'.format(credential_directory))
@@ -143,9 +150,9 @@ def install_to_condor(
         if basedir == htcondor.param['LOCAL_CONFIG_DIR']:
             try:
                 os.makedirs(os.path.join(basedir, 'bak'))
-            except OSError as err:
-                if err.errno is not 17:
-                    raise err
+            except OSError as oserror:
+                if oserror.errno != errno.EEXIST:
+                    raise oserror
             condor_credmon_config_backup = os.path.join(basedir, 'bak', basename + '.bak')
         else:
             condor_credmon_config_backup = condor_credmon_config_path + '.bak'
@@ -154,11 +161,11 @@ def install_to_condor(
         sys.stdout.write('Copied existing {0} to {1}\n'.format(condor_credmon_config_path, condor_credmon_config_backup))
 
     credmon_config = credmon_config_template.format(credential_directory)
-    if (credmon_web_port is not 443) or (credmon_web_directory is not '/'):
+    if (credmon_web_port != 443) or (credmon_web_directory != '/'):
         credmon_web_prefix = 'https://' + socket.getfqdn()
-        if credmon_web_port is not 443:
+        if credmon_web_port != 443:
             credmon_web_prefix += ':' + str(credmon_web_port)
-        if credmon_web_directory.lstrip('/') is not '':
+        if credmon_web_directory.lstrip('/') != '':
             credmon_web_prefix += '/' + credmon_web_directory.lstrip('/').rstrip('/')
         credmon_config += 'CREDMON_WEB_PREFIX = {0}\n'.format(credmon_web_prefix)
 
@@ -193,9 +200,12 @@ def install_to_apache(
         credmon_web_directory = '/'
         ):
 
+    if not os.path.exists(os.path.dirname(apache_config_path)):
+        raise OSError(errno.ENOENT, 'Cannot find Apache config directory', os.path.dirname(apache_config_path))
+
     # Apache must allow the correct path in the config.
     # This should be the name of the parent directory under /var/www.
-    allow_path = os.path.dirname(wsgi_path)
+    allow_path = wsgi_dir
     if wsgi_path[0:8] == '/var/www':
         (parent, child) = os.path.split(wsgi_path)
         i = 0
@@ -211,12 +221,16 @@ def install_to_apache(
         apache_config_backup = apache_config_path + '.bak'
         shutil.copy2(apache_config_path, apache_config_backup)
         sys.stdout.write('Copied existing {0} to {1}\n'.format(apache_config_path, apache_config_backup))
-        
+
     apache_config = apache_config_template.format(credmon_web_directory, wsgi_path, allow_path)
-    
+
     with open(apache_config_path, 'w') as f:
         f.write(apache_config)
         sys.stdout.write('Wrote WSGI config to {0}\n'.format(apache_config_path))
+
+    if not os.path.exists(os.path.dirname(wsgi_path)):
+        os.makedirs(os.path.dirname(wsgi_path))
+        sys.stdout.write('Created WSGI script directory {0}'.format(os.path.dirname(wsgi_path)))
 
     if os.path.exists(wsgi_path):
         wsgi_backup = wsgi_path + '.bak'
@@ -229,7 +243,6 @@ def install_to_apache(
 
     sys.stderr.write('Remember to check your SSL ciphers in your Apache configuration.\n' +
                          'An example is available in the WSGI config.\n')
-    
 
 if __name__ == '__main__':
     install_to_condor()
