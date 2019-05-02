@@ -2,8 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='scitokens-credmon',
-    version = '0.2',
-    description = 'Scitokens credential monitor for use with HTCondor',
+    version = '0.3',
+    description = 'SciTokens credential monitor for use with HTCondor',
     long_description = open('README.md').read(),
     long_description_content_type = "text/markdown",
     url = 'https://github.com/htcondor/scitokens-credmon',
