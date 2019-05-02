@@ -82,7 +82,10 @@ configuration:
 on your submit and execute hosts to start up the CredD and (on the
 submit host) CredMon.
 
-### OAuth2 CredMon Mode
+## OAuth2 CredMon Mode
+
+### Submit Host Admin Configuration
+
 1. `/etc/httpd/conf.d/scitokens_credmon.conf` adds the OAuth2 tokens
 Flask app at the root of your Apache webserver. With this
 configuration, the app will run as long as Apache is running.
@@ -136,7 +139,105 @@ provider. Tokens returned from the providers will be stored in the
 tokens will be monitored and refreshed as necessary by the OAuth
 CredMon.
 
-### Local Credmon Mode
+### Submit File Commands for Requesting OAuth Tokens
+
+`use_oauth_services = <service1, service2, service3, ...>`
+
+A comma-delimited list of requested OAuth service providers, which
+must match (case-insensitive) the <PROVIDER> names in the submit host
+config.
+
+`<PROVIDER>_oauth_permissions(_<HANDLE>) = <scope1, scope2, scope3,
+...>`
+
+A comma-delimited list of requested scopes for the token provided by
+<PROVIDER>. This command is optional if the OAuth provider does not
+require a scope to be defined. A <HANDLE> can optionally be provided
+to give a unique name to the token (useful if requesting differently
+scoped tokens from the same provider).
+
+`<PROVIDER>_oauth_resource(_<HANDLE>) = <resource>`
+
+The resource that the token should request permissions
+for. Currently only required when requesting tokens from a Scitokens
+provider.
+
+When the job executes, tokens are placed in a subdirectory of the job
+sandbox, and can be accessed at
+`$_CONDOR_CREDS/<PROVIDER>(_<HANDLE>).use`.
+
+#### Example - Requesting a single Box token
+
+Suppose the admin has configured your submit host following the
+`BOX_...` example above. Box.com does not require tokens to be scoped,
+so the only command required in your submit file is:
+
+```
+use_oauth_services = box
+```
+
+When this job runs, the token will be placed at
+`$_CONDOR_CREDS/box.use`.
+
+#### Example - Requesting multiple Box tokens
+
+Even though Box.com does not required scoped tokens, to generate
+multiple Box tokens, you must provide a custom handle for each Box
+token using an empty `box_oauth_permissions_<HANDLE>` command. For
+example:
+
+```
+use_oauth_services = box
+
+box_oauth_permissions_foo =
+box_oauth_permissions_bar =
+```
+
+When this job runs, the tokens will be placed at
+`$_CONDOR_CREDS/box_foo.use` and `$_CONDOR_CREDS/box_bar.use`.
+
+#### Example - Requesting Scitokens tokens
+
+Suppose the admin has configured your submit host with a Scitokens
+provider named "UXYZ_SCITOKENS". And suppose you have read and write
+access to the `/public` directory on a resource named
+`https://data.uxyz.edu`. You can request a Scitoken for this resource
+using the following commands:
+
+```
+use_oauth_services = uxyz_scitokens
+uxyz_scitokens_oauth_permissions = read:/public, write:/public
+uxyz_scitokens_oauth_resource = https://data.uxyz.edu
+```
+
+When this job runs, the token will be placed at
+`$_CONDOR_CREDS/uxyz_scitokens.use`.
+
+#### Example - Requesting Box and Scitokens tokens
+
+Putting together the above examples, you can request tokens from
+multiple providers:
+
+```
+use_oauth_services = box, uxyz_scitokens
+
+box_oauth_permissions_personal =
+box_oauth_permissions_uxyz =
+
+uxyz_scitokens_oauth_permissions_read = read:/public/input
+uxyz_scitokens_oauth_resource_read = https://input_data.uxyz.edu
+
+uxyz_scitokens_oauth_permissions_write = write:/public/output
+uxyz_scitokens_oauth_resource_write = https://output_data.uxyz.edu
+```
+
+From this example, you would get four tokens under the
+`$_CONDOR_CREDS` directory:
+`box_personal.use`, `box_uxyz.use`, `uxyz_scitokens_read.use`, and
+`uxyz_scitokens_write.use`.
+
+## Local Credmon Mode
+
 In the "local mode", the credmon will use a provided private key to sign a SciToken
 directly, bypassing any OAuth callout.  This is useful in the case where the admin
 wants a less-complex setup than a full OAuth deployment.
