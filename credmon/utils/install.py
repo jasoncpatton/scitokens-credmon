@@ -205,7 +205,7 @@ def install_to_apache(
 
     # Apache must allow the correct path in the config.
     # This should be the name of the parent directory under /var/www.
-    allow_path = wsgi_dir
+    allow_path = wsgi_path
     if wsgi_path[0:8] == '/var/www':
         (parent, child) = os.path.split(wsgi_path)
         i = 0
