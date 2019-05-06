@@ -244,6 +244,19 @@ def install_to_apache(
     sys.stderr.write('Remember to check your SSL ciphers in your Apache configuration.\n' +
                          'An example is available in the WSGI config.\n')
 
-if __name__ == '__main__':
-    install_to_condor()
-    install_to_apache()
+def install_dummy():
+    return
+
+def install_credmon(server):
+    if server is None:
+        server = 'none'
+
+    flask_installers = {
+        'apache': install_apache,
+        'none': install_dummy,
+    }
+
+    install_condor()
+
+    install_server = flask_installers[server]
+    install_server()
