@@ -1,2 +1,2 @@
 from credmon.utils.utils import *
-from credmon.utils.install import install_cremon
+from credmon.utils.install import install_credmon
