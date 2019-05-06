@@ -252,11 +252,11 @@ def install_credmon(server):
         server = 'none'
 
     flask_installers = {
-        'apache': install_apache,
+        'apache': install_to_apache,
         'none': install_dummy,
     }
 
-    install_condor()
+    install_to_condor()
 
-    install_server = flask_installers[server]
-    install_server()
+    install_to_server = flask_installers[server]
+    install_to_server()
