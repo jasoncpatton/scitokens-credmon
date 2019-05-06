@@ -210,7 +210,6 @@ def install_to_apache(
         (parent, child) = os.path.split(wsgi_path)
         i = 0
         while parent != '/var/www':
-            print(parent, child)
             (parent, child) = os.path.split(parent)
             i += 1
             if (i > 100) or (parent == ''):
