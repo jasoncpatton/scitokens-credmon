@@ -4,6 +4,7 @@ import socket
 import shutil
 import errno
 import htcondor
+from credmon.utils import get_cred_dir
 
 credmon_config_template = '''
 #####################################################################################
@@ -143,7 +144,7 @@ def install_to_condor(
         raise OSError(errno.ENOENT, 'Cannot find HTCondor config directory', os.path.dirname(condor_tokens_config_path))
 
     if not os.path.exists(credential_directory):
-        sys.stderr.write('Warning: credential directory {0} does not exist\n'.format(credential_directory))
+        sys.stderr.write('Warning: credential directory {0} does not exist, will attempt to create it\n'.format(credential_directory))
 
     if os.path.exists(condor_credmon_config_path):
         (basedir, basename) = os.path.split(condor_credmon_config_path)
@@ -180,7 +181,12 @@ def install_to_condor(
             f.write(tokens_config_example)
         sys.stdout.write('Wrote example tokens config to {0}\n'.format(condor_tokens_config_path))
 
+    # to see what's set now, reload the config after adding to it
     htcondor.reload_config()
+
+    # get_cred_dir will create the credential directory if it doesn't already exist
+    get_cred_dir()
+
     if ('SEC_DEFAULT_ENCRYPTION' not in htcondor.param):
         sys.stderr.write(
             'Warning: SEC_DEFAULT_ENCRYPTION not defined in current HTCondor configuration.\n' +
@@ -229,7 +235,7 @@ def install_to_apache(
 
     if not os.path.exists(os.path.dirname(wsgi_path)):
         os.makedirs(os.path.dirname(wsgi_path))
-        sys.stdout.write('Created WSGI script directory {0}'.format(os.path.dirname(wsgi_path)))
+        sys.stdout.write('Created WSGI script directory {0}\n'.format(os.path.dirname(wsgi_path)))
 
     if os.path.exists(wsgi_path):
         wsgi_backup = wsgi_path + '.bak'
