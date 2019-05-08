@@ -25,82 +25,76 @@ pip install scitokens-credmon
 Or you can grab and install an RPM from our
 [releases](../../releases).
 
-If installing from `pip`, you will need to [grab and edit
-configuration files](configs/) to enable the CredMon. These
-configuration files are referenced below in *Deployment*. Place the
-config files at the following recommended locations:
-```
-/etc/condor/config.d/50-scitokens-credmon.conf                  HTCondor configuration file
-/etc/httpd/conf.d/scitokens_credmon.conf                        Apache configuration file for the Flask app
-/var/www/wsgi-scripts/scitokens-credmon/scitokens-credmon.wsgi  WSGI script for the Flask app
-```
-
 ## Deployment
 
 After installing the Scitokens CredMon for the first time, some
 configuration is required to enable the CredMon and, if desired, the
 OAuth2 Token Flask app.
 
-1. Create or modify HTCondor's credential directory
-(`condor_config_val SEC_CREDENTIAL_DIRECTORY`) such that it is owned
-by root, owned by the condor group, not readable by others, with the
-SetGID bit set:
-    ```sh
-     [jcpatton@localhost ~]$ CREDDIR=$(condor_config_val SEC_CREDENTIAL_DIRECTORY)
-     [jcpatton@localhost ~]$ sudo mkdir $CREDDIR # may already exist
-     [jcpatton@localhost ~]$ sudo chown root:condor $CREDDIR
-     [jcpatton@localhost ~]$ sudo chmod 2770 $CREDDIR
-    ```
+To install a generic configuration to your submit host, run:
+```
+scitokens_credmon --deploy --apache
+```
 
-2. On HTCondor submit hosts, uncomment the `DAEMON_LIST` line in
-`/etc/condor/config.d/50-scitokens-credmon.conf` so that it reads:
-    ```
-    DAEMON_LIST = $(DAEMON_LIST), CREDD, SEC_CREDENTIAL_MONITOR
-    ```
-    This tells HTCondor to start the CredD and CredMon when HTCondor
-    starts.
+This creates the credential directory if it does not exist (see note below),
+enables the CredD and CredMon in the HTCondor configuration,
+places the WSGI script for the OAuth2 Token Flask app in `/var/www`,
+and puts the OAuth2 Token Flask app at the root of your Apache webserver.
+To change the HTCondor or Apache configurations, edit either
+`/etc/condor/config.d/50-scitokens-credmon.conf` or
+`/etc/httpd/conf.d/scitokens_credmon.conf`. See the following notes
+for some important manual configurations details.
 
-3. On HTCondor execute hosts, add the following to the HTCondor
-configuration:
-    ```
-    DAEMON_LIST = $(DAEMON_LIST), CREDD
-    SEC_CREDENTIAL_DIRECTORY = /var/lib/condor/credentials
-    ```
-    The `SEC_CREDENTIAL_DIRECTORY` must exist and be owned by root.
+After installing the configuration, you must (re)start Apache and HTCondor.
 
-4. For *both submit and execute hosts*, HTCondor must be configured to
+### Note about the credential directory
+
+`scitokens_credmon --deploy` may create the credential directory with
+inappropriate permissions. The credential directory
+(`condor_config_val SEC_CREDENTIAL_DIRECTORY`) should be owned by the
+group condor with the SetGID bit set and group write permissions:
+```
+chgrp condor $(condor_config_val SEC_CREDENTIAL_DIRECTORY)
+chmod 2770 $(condor_config_val SEC_CREDENTIAL_DIRECTORY)
+```
+```
+# ls -ld $(condor_config_val SEC_CREDENTIAL_DIRECTORY)
+drwxrws--- 3 root condor 4096 May  8 10:05 /var/lib/condor/credentials
+```
+
+### Note about execute nodes
+The "new" OAuth2 token mode must also be enabled in the HTCondor config of
+all execute nodes that you wish to be able to send tokens to by adding:
+```
+CREDD_OAUTH_MODE = TRUE
+```
+
+### Note about daemon-to-daemon encryption
+
+For *both submit and execute hosts*, HTCondor must be configured to
 use encryption for daemon-to-daemon communication. You can check this
 by running `condor_config_val SEC_DEFAULT_ENCRYPTION` on each host,
 which will return `REQUIRED` or `PREFERRED` if encryption is enabled.
-If encryption is not enabled, you should add (or uncomment in
-`50-scitokens-credmon.conf`) the following to your HTCondor
+If encryption is not enabled, you should add the following to your HTCondor
 configuration:
     ```
     SEC_DEFAULT_ENCRYPTION = REQUIRED
     ```
-5. After making the configuration changes, issue a `condor_restart`
-on your submit and execute hosts to start up the CredD and (on the
-submit host) CredMon.
 
 ## OAuth2 CredMon Mode
 
 ### Submit Host Admin Configuration
 
-1. `/etc/httpd/conf.d/scitokens_credmon.conf` adds the OAuth2 tokens
-Flask app at the root of your Apache webserver. With this
-configuration, the app will run as long as Apache is running.
+1. `/etc/httpd/conf.d/scitokens_credmon.conf` adds the OAuth2 Token
+Flask app at the root of your Apache webserver.
 
-2. On HTCondor submit hosts, uncomment the `CREDD_OAUTH_MODE` line in
-`/etc/condor/config.d/50-scitokens-credmon.conf` so that it reads:
-    ```
-    CREDD_OAUTH_MODE = True
-    ```
-    This tells the CredD to use the OAuth2 mode of transferring tokens
-    to the execute hosts.
+2. `CREDD_OAUTH_MODE` must be set to `TRUE` in your HTCondor config.
 
 3. OAuth2 client information should be added to the submit host HTCondor
 configuration for any OAuth2 providers that you would like your users
-to be able to obtain access tokens from. For each provider:
+to be able to obtain access tokens from. If you installed your
+configuration using `scitokens_credmon --deploy`, an example is given
+in `/etc/condor/config.d/60-oauth-token-providers.conf`. For each provider:
     * The client id and client secret are generated when you
     register your submit machine as an application with the
     OAuth2 provider's API. The client secret must be kept in a file
@@ -121,7 +115,7 @@ The HTCondor OAuth2 token configuration parameters are:
 ```
 For example, for Box.com, you could configure HTCondor as follows:
 ```
-BOX_CLIENT_ID = your_box_client_id
+BOX_CLIENT_ID = changeme
 BOX_CLIENT_SECRET_FILE = /etc/condor/.secrets/box
 BOX_RETURN_URL_SUFFIX = /return/box
 BOX_AUTHORIZATION_URL = https://account.box.com/api/oauth2/authorize
