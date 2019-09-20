@@ -45,7 +45,12 @@ rm -rf %{pypi_name}.egg-info
 %py2_install
 mkdir -p %{buildroot}/var/lib/condor/credentials
 cp -a examples/config/README.credentials %{buildroot}/var/lib/condor/credentials
-
+mkdir -p %{buildroot}/var/www/wsgi-scripts/scitokens-credmon
+cp -a examples/wsgi/scitokens-credmon.wsgi %{buildroot}/var/www/wsgi-scripts/scitokens-credmon/scitokens-credmon.wsgi
+mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d
+cp -a examples/config/apache/scitokens.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf.example
+mkdir -p %{buildroot}/%{_sysconfdir}/condor/config.d
+cp -a examples/config/condor/*.conf %{buildroot}/%{_sysconfdir}/condor/config.d
 
 %files -n python2-%{pypi_name}
 %doc 
@@ -57,7 +62,10 @@ cp -a examples/config/README.credentials %{buildroot}/var/lib/condor/credentials
 %ghost /var/lib/condor/credentials/wsgi_session_key
 %ghost /var/lib/condor/credentials/CREDMON_COMPLETE
 %ghost /var/lib/condor/credentials/pid
-%ghost %{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf
+/var/www/wsgi-scripts/scitokens-credmon
+%{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf.example
+%config(noreplace) %{_sysconfdir}/condor/config.d/50-scitokens-credmon.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/55-tokens.conf
 
 %changelog
 * Thu May 02 2019 Jason Patton <jpatton@cs.wisc.edu> - 0.3-1
