@@ -65,7 +65,7 @@ cp -a examples/config/condor/*.conf %{buildroot}/%{_sysconfdir}/condor/config.d
 /var/www/wsgi-scripts/scitokens-credmon
 %{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf.example
 %config(noreplace) %{_sysconfdir}/condor/config.d/50-scitokens-credmon.conf
-%config(noreplace) %{_sysconfdir}/condor/config.d/55-tokens.conf
+%config(noreplace) %{_sysconfdir}/condor/config.d/55-oauth-tokens.conf
 
 %changelog
 * Thu May 02 2019 Jason Patton <jpatton@cs.wisc.edu> - 0.3-1
