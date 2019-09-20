@@ -48,7 +48,7 @@ cp -a examples/config/README.credentials %{buildroot}/var/lib/condor/credentials
 mkdir -p %{buildroot}/var/www/wsgi-scripts/scitokens-credmon
 cp -a examples/wsgi/scitokens-credmon.wsgi %{buildroot}/var/www/wsgi-scripts/scitokens-credmon/scitokens-credmon.wsgi
 mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d
-cp -a examples/config/apache/scitokens.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf.example
+cp -a examples/config/apache/scitokens_credmon.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/scitokens_credmon.conf.example
 mkdir -p %{buildroot}/%{_sysconfdir}/condor/config.d
 cp -a examples/config/condor/*.conf %{buildroot}/%{_sysconfdir}/condor/config.d
 
