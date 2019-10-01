@@ -14,6 +14,5 @@ services:
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
     ports:
       - "443:443"
-      - "80:80"
-    hostname: seaview.phy.syr.edu
-    domainname: phy.syr.edu
+    hostname: localhost.localdomain
+    domainname: localdomain
