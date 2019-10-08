@@ -46,6 +46,7 @@ mkdir -p %{buildroot}/%{_var}/lib/condor/credentials
 mv examples/config/README.credentials %{buildroot}/%{_var}/lib/condor/credentials
 mkdir -p %{buildroot}/%{_var}/www/wsgi-scripts/scitokens-credmon
 mv examples/wsgi/scitokens-credmon.wsgi %{buildroot}/%{_var}/www/wsgi-scripts/scitokens-credmon/scitokens-credmon.wsgi
+rmdir examples/wsgi
 
 %files -n python2-%{pypi_name}
 %doc LICENSE README.md examples
