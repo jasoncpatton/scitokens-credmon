@@ -53,13 +53,14 @@ RUN pip install --upgrade pip
 RUN pip install git+https://github.com/htcondor/scitokens-credmon
 
 # KNOBS
+COPY examples/config/condor/50-scitokens-credmon.conf /etc/condor/config.d/
+RUN sed -r -i 's/# ?SEC_DEFAULT_ENCRYPTION/SEC_DEFAULT_ENCRYPTION/' /etc/condor/config.d/50-scitokens-credmon.conf
+COPY examples/config/apache/scitokens_credmon.conf /etc/httpd/conf.d/
+COPY examples/wsgi/scitokens-credmon.wsgi /var/www/wsgi-scripts/scitokens-credmon/
 COPY docker/10-docker.conf /etc/condor/config.d/
-RUN echo "CREDD_OAUTH_MODE = TRUE" > /etc/condor/config.d/70-startd-token.conf
-RUN echo "SEC_DEFAULT_ENCRYPTION = REQUIRED" > /etc/condor/config.d/10-sec-encrypt.conf
 COPY docker/60-oauth-token-providers.conf.tmpl /etc/condor/config.d/60-oauth-token-providers.conf.tmpl
-
-RUN scitokens_credmon --deploy --apache
-RUN chgrp condor $(condor_config_val SEC_CREDENTIAL_DIRECTORY) && \
+RUN mkdir -p $(condor_config_val SEC_CREDENTIAL_DIRECTORY) && \
+    chgrp condor $(condor_config_val SEC_CREDENTIAL_DIRECTORY) && \
     chmod 2770 $(condor_config_val SEC_CREDENTIAL_DIRECTORY)
 
 ARG SCITOKENS_CLIENT_ID=clientid
