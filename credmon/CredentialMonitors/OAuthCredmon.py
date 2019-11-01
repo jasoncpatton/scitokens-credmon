@@ -67,9 +67,18 @@ class OAuthCredmon(AbstractCredentialMonitor):
 
         # check if mark file exists
         if os.path.exists(mark_path):
-            return True
-        else:
-            return False
+            try:
+                mtime = os.stat(mark_path).st_mtime
+            except OSError as e:
+                self.log.error('Could not stat %s', mark_path)
+                return False
+
+            # if mark file is older than 24 hours, delete tokens
+            if time.time() - mtime > 24*60*60:
+                return True
+
+        return False
+
 
     def refresh_access_token(self, username, token_name):
         if OAuth2Session is None:
