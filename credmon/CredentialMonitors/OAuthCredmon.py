@@ -74,7 +74,7 @@ class OAuthCredmon(AbstractCredentialMonitor):
                 return False
 
             # if mark file is older than 24 hours, delete tokens
-            self.log.debug('Mark file is %.1f hours old', (time.time() - mtime)/24.)
+            self.log.debug('Mark file is %.1f hours old', (time.time() - mtime)/(60.*60.))
             if time.time() - mtime > 24*60*60:
                 return True
 
