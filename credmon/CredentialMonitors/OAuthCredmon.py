@@ -11,6 +11,11 @@ import glob
 import tempfile
 import re
 
+try:
+    import htcondor
+except ImportError:
+    htcondor = None
+
 class OAuthCredmon(AbstractCredentialMonitor):
 
     use_token_metadata = True
@@ -73,9 +78,12 @@ class OAuthCredmon(AbstractCredentialMonitor):
                 self.log.error('Could not stat %s', mark_path)
                 return False
 
-            # if mark file is older than 24 hours, delete tokens
-            self.log.debug('Mark file is %.1f hours old', (time.time() - mtime)/(60.*60.))
-            if time.time() - mtime > 24*60*60:
+            # if mark file is older than 24 hours (or OAUTH_CREDMON_TOKEN_LIFETIME if defined), delete tokens
+            self.log.debug('Mark file is %d seconds old', int(time.time() - mtime))
+            if htcondor is not None and 'OAUTH_CREDMON_TOKEN_LIFETIME' in htcondor.param:
+                if time.time() - mtime > htcondor.param['OAUTH_CREDMON_TOKEN_LIFETIME']:
+                    return True
+            elif time.time() - mtime > 24*60*60:
                 return True
 
         return False
