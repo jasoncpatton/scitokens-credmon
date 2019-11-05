@@ -81,7 +81,7 @@ class OAuthCredmon(AbstractCredentialMonitor):
             # if mark file is older than 24 hours (or OAUTH_CREDMON_TOKEN_LIFETIME if defined), delete tokens
             self.log.debug('Mark file is %d seconds old', int(time.time() - mtime))
             if htcondor is not None and 'OAUTH_CREDMON_TOKEN_LIFETIME' in htcondor.param:
-                if time.time() - mtime > htcondor.param['OAUTH_CREDMON_TOKEN_LIFETIME']:
+                if time.time() - mtime > int(htcondor.param['OAUTH_CREDMON_TOKEN_LIFETIME']):
                     return True
             elif time.time() - mtime > 24*60*60:
                 return True
