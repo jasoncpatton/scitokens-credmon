@@ -1,7 +1,7 @@
 %global pypi_name scitokens-credmon
 
 Name:           %{pypi_name}
-Version:        0.5
+Version:        0.6
 Release:        1%{?dist}
 Summary:        SciTokens credential monitor for use with HTCondor
 
@@ -50,7 +50,7 @@ rmdir examples/wsgi
 
 %files -n python2-%{pypi_name}
 %doc LICENSE README.md examples
-%{_bindir}/scitokens_credmon
+%{_bindir}/condor_oauth_credmon
 %{_bindir}/scitokens_credential_producer
 %{python2_sitelib}/credmon
 %{python2_sitelib}/scitokens_credmon-*.egg-info
@@ -61,6 +61,9 @@ rmdir examples/wsgi
 %{_var}/www/wsgi-scripts/scitokens-credmon
 
 %changelog
+* Tue Mar 31 2020 Jason Patton <jpatton@cs.wisc.edu> - 0.6-1
+- Conform to new HTCondor OAuth config behavior
+
 * Thu Mar 05 2020 Jason Patton <jpatton@cs.wisc.edu> - 0.5-1
 - Change token deletion behavior.
 
