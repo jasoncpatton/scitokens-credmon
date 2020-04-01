@@ -50,7 +50,7 @@ rmdir examples/wsgi
 
 %files -n python2-%{pypi_name}
 %doc LICENSE README.md examples
-%{_bindir}/condor_oauth_credmon
+%{_bindir}/condor_credmon_oauth
 %{_bindir}/scitokens_credential_producer
 %{python2_sitelib}/credmon
 %{python2_sitelib}/scitokens_credmon-*.egg-info
