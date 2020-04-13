@@ -26,6 +26,7 @@ Requires:       python-six
 Requires:       python-flask
 Requires:       python2-cryptography
 Requires:       python2-scitokens
+Requires:       condor >= 8.9.7
 Requires:       httpd
 Requires:       mod_wsgi
 
@@ -54,7 +55,7 @@ rmdir examples/wsgi
 %{_bindir}/scitokens_credential_producer
 %{python2_sitelib}/credmon
 %{python2_sitelib}/scitokens_credmon-*.egg-info
-%attr(2770, root, condor) %{_var}/lib/condor/credentials/oauth
+%{_var}/lib/condor/credentials/oauth/README.credentials
 %ghost %{_var}/lib/condor/credentials/oauth/wsgi_session_key
 %ghost %{_var}/lib/condor/credentials/oauth/CREDMON_COMPLETE
 %ghost %{_var}/lib/condor/credentials/oauth/pid
