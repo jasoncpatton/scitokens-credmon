@@ -266,10 +266,12 @@ def oauth_return(provider):
     try:
         (user_url, user_field_keys) = api_endpoints.user(provider_ad['TokenUrl'])
         if user_url is not None:
-            user_info = oauth.get(user_url)
+            get_user_info = oauth.get(user_url)
+            user_info = get_user_info.json()
             for user_field in user_field_keys:
-                user_info = user_info[user_field]
-            session['providers'][provider]['username'] = user_info
+                username = user_info[user_field]
+            username = str(username)
+            session['providers'][provider]['username'] = username
         elif 'sub' in user_info: # scitokens/jwt
             session['providers'][provider]['username'] = user_info['sub']
         else:
